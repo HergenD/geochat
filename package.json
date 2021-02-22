@@ -1,0 +1,19 @@
+{
+  "name": "geochat_backend",
+  "description": "",
+  "version": "0.0.1",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HergenD/geochat_backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "homepage": "https://hergen.nl",
+  "dependencies": {
+    "async": "^3.2.0",
+    "express": "^4.17.1",
+    "socket.io": "^3.1.1"
+  }
+}
