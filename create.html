@@ -2,22 +2,97 @@
 <html>
 
 <head>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            background-color: #6441a5;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
+        .container {
+            height: 350px;
+            width: 600px;
+            padding: 30px;
+            font-size: 24px;
+            font-weight: 600;
+            margin: calc(50vh - 175px) auto 0 auto;
+            background-color: black;
+        }
+
+        .container input {
+            height: 28px;
+            font-size: 22px;
+            font-weight: 500;
+        }
+
+        .settings {}
+
+        .input{
+            margin-top:22px;
+        }
+        .button {
+            background-color: white;
+            border: none;
+            color: black;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            float:right;
+            margin-bottom:18px;
+        }
+
+        .button:hover {
+            cursor: pointer;
+        }
+
+        .button:disabled {
+            color: grey;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 
 <body>
-        Amount of rounds:
-        <input id="roundsInput" type="number" value=5>
-        Round duration:
-        <input id="durationInput" type="number" value=30>
-        <button id="create">Create room</button>
+    <div class="container">
+        <div class="settings">
+            <div class="input"><label for="roomName">Room name:</label>
+                <input style="float:right;" id="roomName" type="text" value="WHOMEGALUL">
+            </div>
+            <div class="input">
+                Amount of rounds:
+                <input style="float:right;" id="roundsInput" type="number" value=5>
+            </div>
+            <div class="input">
+                Round duration:
+                <input style="float:right;" id="durationInput" type="number" value=30>
+            </div>
+            <div class="input">
+                <button class="button" id="create">Create room</button>
+            </div>
 
-    <div style="margin-top:30px;">
-        <label for="roomfield">Room id:</label>
-        <input id="roomfield" autocomplete="off" disabled />
-        <label for="secretfield">Secret:</label>
-        <input id="secretfield" autocomplete="off" disabled />
-        <button onclick="goToRoom()">Join room</button>
+        </div>
+
+        <div style="margin-top:0px;clear:both">
+            <div style="height:32px">
+
+            </div>
+            <div class="input">
+                <label for="roomfield">Room id:</label>
+                <button class="button" onclick="goToRoom()">Join room</button>
+            <input style="float:right;height:46px;margin-right:8px;" id="roomfield" autocomplete="off" disabled />
+            
+                
+                </div>
+  
+        </div>
+
     </div>
 
 
@@ -35,8 +110,8 @@
             document.cookie = `userId = ${userId}`;
         });
 
-        function goToRoom(){
-            if(room && room.room){
+        function goToRoom() {
+            if (room && room.room) {
                 location.href = "/" + room.room;
             }
         }
@@ -56,9 +131,9 @@
             e.preventDefault();
             const rounds = roundsInput.value;
             const duration = durationInput.value;
-            const zooms = {1:1,2:2,3:4,4:8,5:12};
-            
-            socket.emit('create room', {rounds, duration, zooms});
+            const zooms = { 1: 1, 2: 2, 3: 4, 4: 8, 5: 12 };
+
+            socket.emit('create room', { rounds, duration, zooms });
         });
 
         let room;

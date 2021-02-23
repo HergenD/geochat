@@ -12,11 +12,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        #map {
-            height: 100vh;
-            position: relative;
-        }
-
         .hover {
             position: absolute;
             bottom: 10px;
@@ -283,11 +278,22 @@
             map.boxZoom.enable();
             map.keyboard.enable();
             map.dragging.enable();
+            start.style.display = "inline-block";
         });
 
         socket.on('game started', function (msg) {
+            map.flyTo([51.505, -0.09], 1);
+            map.touchZoom.disable();
+            map.doubleClickZoom.disable();
+            map.scrollWheelZoom.disable();
+            map.boxZoom.disable();
+            map.keyboard.disable();
+            map.dragging.disable();
             start.style.display = "none";
             gameInfo.style.display = "block";
+            if (theMarker != undefined) {
+                map.removeLayer(theMarker);
+            };
         });
     </script>
 </body>

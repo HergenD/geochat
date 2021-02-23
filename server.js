@@ -23,7 +23,7 @@ function stats(room){
         },
         function (callback) {
             io.to(room).emit("stats", {
-                players: Object.keys(rooms[room].players).length
+                players: rooms[room].playerCount
             })
             setTimeout(callback, 1000);
         }
@@ -62,12 +62,20 @@ function gameLoop(room, duration, round) {
                     }
                     rooms[room].lat = totalLat / rooms[room].guesses[round].length;
                     rooms[room].lon = totalLon / rooms[room].guesses[round].length;
+                    rooms[room].status = 0;
+                    
+                    for(let i =0; i< Object.keys(rooms[room].players).length;i++){
+                        rooms[room].players[Object.keys(rooms[room].players)[i]] = {};
+                    } 
                     io.to(room).emit("finished", {
                         round,
                         lat: rooms[room].lat,
                         lon: rooms[room].lon,
                         zoom: rooms[room].zooms[round]
                     });
+                    rooms[room].currentRound = 0;
+                    rooms[room].currentSeconds = rooms[room].duration;
+
                     return
                 }
 
@@ -97,15 +105,13 @@ function gameLoop(room, duration, round) {
                 rooms[room].guesses[round] = [];
             }
             rooms[room].currentSeconds--;
-            console.log(rooms[room].currentSeconds, round)
-            setTimeout(callback, waitTime);
+            setTimeout(callback, waitTime)
         }
     )
 }
 
 io.on('connection', (socket) => {
-    console.log("socket " + socket.id + " connected");
-    users[socket.id] = {};
+    users[socket.id] = {}
 
     socket.on('user connect', id => {
         if (id === "create") {
@@ -113,16 +119,13 @@ io.on('connection', (socket) => {
         }
         users[socket.id].userId = id;
         socket.emit("user connected", users[socket.id].userId);
-        console.log("user " + users[socket.id].userId + " connected");
     });
 
     socket.on('create room', options => {
-        console.log('create room ' + JSON.stringify(options));
         let room = makeid(5);
         while (rooms[room]) {
             room = makeid(5);
         }
-        console.log(rooms)
         const secret = makeid(24);
         const rounds = parseInt(options.rounds);
         const duration = parseInt(options.duration);
@@ -139,7 +142,8 @@ io.on('connection', (socket) => {
             duration,
             players: {},
             lat: 51.505,
-            lon: -0.09
+            lon: -0.09,
+            playerCount: 0,
         };
 
         socket.emit("room created", rooms[room]);
@@ -151,7 +155,6 @@ io.on('connection', (socket) => {
             return
         }
         rooms[room].status = 1;
-        console.log("game started");
         socket.emit("game started", true)
         gameLoop(room, rooms[room].duration, 1);
     });
@@ -161,7 +164,6 @@ io.on('connection', (socket) => {
             socket.emit("redirect", "/")
             return
         }
-        console.log(rooms[room]);
         if(rooms[room].players[users[socket.id].userId] == undefined){
             rooms[room].players[users[socket.id].userId] = {}
         }
@@ -184,15 +186,12 @@ io.on('connection', (socket) => {
             currentSeconds: rooms[room].currentSeconds,
             canGuess
          })
-        console.log("user joined " + room);
+         rooms[room].playerCount++;
     });
 
     socket.on('submit guess', guess => {
-        console.log("guessed");
-        console.log(rooms[guess.room]);
 
         if(!rooms[guess.room].status || rooms[guess.room].players[users[socket.id].userId][rooms[guess.room].currentRound]){
-            console.log("could not guess");
             return;
         }
 
@@ -201,10 +200,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on("disconnect", (reason) => {
-        console.log(socket.id + " disconnected");
-        console.log(users[socket.id].room);
         if(users[socket.id] && users[socket.id].room){
-            // delete rooms[users[socket.id].room].players[socket.id]
+            rooms[users[socket.id].room].playerCount--;
         }
         delete users[socket.id];
     });
