@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+</head>
+
+<body>
+        Amount of rounds:
+        <input id="roundsInput" type="number" value=5>
+        Round duration:
+        <input id="durationInput" type="number" value=30>
+        <button id="create">Create room</button>
+
+    <div style="margin-top:30px;">
+        <label for="roomfield">Room id:</label>
+        <input id="roomfield" autocomplete="off" disabled />
+        <label for="secretfield">Secret:</label>
+        <input id="secretfield" autocomplete="off" disabled />
+        <button onclick="goToRoom()">Join room</button>
+    </div>
+
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        const cookie = document.cookie.split('; ').reduce((prev, current) => {
+            const [name, value] = current.split('=');
+            prev[name] = value;
+            return prev
+        }, {});
+        var socket = io();
+        socket.emit('user connect', cookie.userId ?? "create");
+        socket.on('user connected', function (userId) {
+            document.cookie = `userId = ${userId}`;
+        });
+
+        function goToRoom(){
+            if(room && room.room){
+                location.href = "/" + room.room;
+            }
+        }
+
+
+        var messages = document.getElementById('messages');
+        var form = document.getElementById('form');
+        var create = document.getElementById('create');
+        var start = document.getElementById('start');
+        var roundsInput = document.getElementById('roundsInput');
+        var durationInput = document.getElementById('durationInput');
+        var input = document.getElementById('input');
+        var roomField = document.getElementById('roomfield');
+        var secretField = document.getElementById('secretfield');
+
+        create.addEventListener('click', function (e) {
+            e.preventDefault();
+            const rounds = roundsInput.value;
+            const duration = durationInput.value;
+            const zooms = {1:1,2:2,3:4,4:8,5:12};
+            
+            socket.emit('create room', {rounds, duration, zooms});
+        });
+
+        let room;
+        socket.on('room created', function (msg) {
+            room = msg;
+            roomField.value = room.room;
+            secretField.value = room.secret;
+            console.log(room)
+            start.disabled = false;
+        });
+    </script>
+</body>
+
+</html>
