@@ -129,6 +129,7 @@ io.on('connection', (socket) => {
         const secret = makeid(24);
         const rounds = parseInt(options.rounds);
         const duration = parseInt(options.duration);
+        const roomName = options.roomName;
         rooms[room] = {
             room,
             status: 0,
@@ -144,6 +145,7 @@ io.on('connection', (socket) => {
             lat: 51.505,
             lon: -0.09,
             playerCount: 0,
+            roomName
         };
 
         socket.emit("room created", rooms[room]);

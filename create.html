@@ -126,14 +126,16 @@
         var input = document.getElementById('input');
         var roomField = document.getElementById('roomfield');
         var secretField = document.getElementById('secretfield');
+        
+        var roomName = document.getElementById('roomName');
 
         create.addEventListener('click', function (e) {
             e.preventDefault();
             const rounds = roundsInput.value;
             const duration = durationInput.value;
-            const zooms = { 1: 1, 2: 2, 3: 4, 4: 8, 5: 12 };
-
-            socket.emit('create room', { rounds, duration, zooms });
+            const zooms = { 1: 1, 2: 3, 3: 5, 4: 7, 5: 9 };
+            const name = roomName.value;
+            socket.emit('create room', { rounds, duration, zooms, roomName: name });
         });
 
         let room;
