@@ -245,10 +245,13 @@
             rounds = msg.rounds;
             if (msg.status) {
                 updateGameInfo(msg.currentRound, msg.currentSeconds);
+                map.flyTo([msg.lat, msg.lon], msg.zoom)
             }
             if (msg.canGuess) {
                 allowGuess = true;
             }
+
+            updateGameInfo(msg.round, null);
 
             room = msg.room;
             roomName.innerHTML = "<span class='dot connected'></span>" + msg.roomName;

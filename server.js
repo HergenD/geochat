@@ -17,7 +17,7 @@ app.get('/*', (req, res) => {
     res.sendFile(__dirname + '/play.html');
 });
 
-// Websocket connection
+// Websocket connection router
 io.on('connection', (socket) => {
     let connection = createGlobalConnection(socket);
 
@@ -72,81 +72,100 @@ function runRoomInfoLoop(roomId) {
     )
 }
 
-function startGameLoop(room) {
+function initializeGameLoop(room) {
     let round = 1;
-    const duration = rooms[room].duration;
-    io.to(room).emit("round", {
+    let duration = room.duration;
+
+    io.to(room.room).emit("round", {
         round,
         lat: 51.505,
         lon: -0.09,
-        zoom: rooms[room].zooms[round]
+        zoom: room.zooms[round]
     });
+    return [round, duration];
+}
+
+function calculateAverageLatLon(room) {
+    let totalLat = 0;
+    let totalLon = 0;
+    const round = room.currentRound;
+
+    for (let i = 0; i < room.guesses[round].length; i++) {
+        totalLat += room.guesses[round][i].lat
+        totalLon += room.guesses[round][i].lon
+    }
+
+    if (room.guesses[round].length) {
+        room.lat = totalLat / room.guesses[round].length;
+        room.lon = totalLon / room.guesses[round].length;
+    }
+}
+
+function resetRoom(room){
+    room.gameRunning = false;
+    for (let i = 0; i < Object.keys(room.players).length; i++) {
+        room.players[Object.keys(room.players)[i]] = {};
+    }
+    room.guesses = {};
+
+    room.currentRound = 0;
+    room.currentSeconds = room.duration;
+}
+
+function startGameLoop(roomId) {
+    const room = rooms[roomId];
+    let [round, duration] = initializeGameLoop(room)
+
     async.whilst(
-        function (callbackFunction) {
-            // start loop
-            // loopStartTime = Date.now();
-            callbackFunction(null, rooms[room].currentSeconds >= 0);
+        function (cb) {
+            cb(null, room.currentSeconds >= 0);
         },
         function (callback) {
-            //logic
-            io.to(room).emit("countdown", rooms[room].currentSeconds);
-            waitTime = 1000;
-            if (rooms[room].currentSeconds === 0) {
-                if (round < rooms[room].rounds) {
-                    rooms[room].currentSeconds = duration + 1
-                } else {
-                    let totalLat = 0;
-                    let totalLon = 0;
 
-                    for (let i = 0; i < rooms[room].guesses[round].length; i++) {
-                        totalLat += rooms[room].guesses[round][i].lat
-                        totalLon += rooms[room].guesses[round][i].lon
-                    }
-                    rooms[room].lat = totalLat / rooms[room].guesses[round].length;
-                    rooms[room].lon = totalLon / rooms[room].guesses[round].length;
-                    rooms[room].gameRunning = false;
+            io.to(roomId).emit("countdown", room.currentSeconds);
 
-                    for (let i = 0; i < Object.keys(rooms[room].players).length; i++) {
-                        rooms[room].players[Object.keys(rooms[room].players)[i]] = {};
-                    }
-                    io.to(room).emit("finished", {
+            let waitTime = 1000;
+
+            switch (room.currentSeconds) {
+                case 0:
+                    if (round >= room.rounds) {
+                        calculateAverageLatLon(room);
+
+                        io.to(roomId).emit("finished", {
+                            round,
+                            lat: room.lat,
+                            lon: room.lon,
+                            zoom: room.zooms[round]
+                        });
+
+                        resetRoom(room);
+
+                        return;
+                    } 
+
+                    room.currentSeconds = duration + 1
+                    calculateAverageLatLon(room);
+
+                    round++;
+
+                    io.to(roomId).emit("round", {
                         round,
-                        lat: rooms[room].lat,
-                        lon: rooms[room].lon,
-                        zoom: rooms[room].zooms[round]
+                        lat: room.lat,
+                        lon: room.lon,
+                        zoom: room.zooms[round]
                     });
-                    rooms[room].currentRound = 0;
-                    rooms[room].currentSeconds = rooms[room].duration;
 
-                    return
-                }
-
-                let totalLat = 0;
-                let totalLon = 0;
-                if (rooms[room].guesses[round].length) {
-                    for (let i = 0; i < rooms[room].guesses[round].length; i++) {
-                        totalLat += rooms[room].guesses[round][i].lat
-                        totalLon += rooms[room].guesses[round][i].lon
-                    }
-                    rooms[room].lat = totalLat / rooms[room].guesses[round].length;
-                    rooms[room].lon = totalLon / rooms[room].guesses[round].length;
-                }
-
-
-                round++;
-                io.to(room).emit("round", {
-                    round,
-                    lat: rooms[room].lat,
-                    lon: rooms[room].lon,
-                    zoom: rooms[room].zooms[round]
-                });
-            } else if (rooms[room].currentSeconds === 1) {
-                waitTime = waitTime + 1000;
-            } else if (rooms[room].currentSeconds === duration) {
-                rooms[room].currentRound = round;
-                rooms[room].guesses[round] = [];
+                    break;
+                case 1:
+                    waitTime = waitTime + 1000;
+                    break;
+                case duration:
+                    room.currentRound = round;
+                    room.guesses[round] = [];
+                    break;
             }
-            rooms[room].currentSeconds--;
+
+            room.currentSeconds--;
             setTimeout(callback, waitTime)
         }
     )
@@ -165,11 +184,11 @@ function assignUserId(connection, id) {
 }
 
 function makeRoomId() {
-    let room = makeid(5);
-    while (rooms[room]) {
-        room = makeid(5);
+    let roomId = makeid(5);
+    while (rooms[roomId]) {
+        roomId = makeid(5);
     }
-    return room;
+    return roomId;
 }
 
 function createRoom(connection, options) {
@@ -240,7 +259,10 @@ function joinRoom(connection, roomId) {
         status: room.gameRunning,
         currentRound: room.currentRound,
         currentSeconds: room.currentSeconds,
-        canGuess
+        canGuess,
+        lat: room.lat,
+        lon: room.lon,
+        zoom: room.zooms[room.currentRound]
     })
 
     room.playerCount++;
