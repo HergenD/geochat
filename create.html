@@ -30,9 +30,10 @@
 
         .settings {}
 
-        .input{
-            margin-top:22px;
+        .input {
+            margin-top: 22px;
         }
+
         .button {
             background-color: white;
             border: none;
@@ -44,8 +45,8 @@
             display: block;
             font-size: 16px;
             font-weight: 600;
-            float:right;
-            margin-bottom:18px;
+            float: right;
+            margin-bottom: 18px;
         }
 
         .button:hover {
@@ -86,11 +87,11 @@
             <div class="input">
                 <label for="roomfield">Room id:</label>
                 <button class="button" onclick="goToRoom()">Join room</button>
-            <input style="float:right;height:46px;margin-right:8px;" id="roomfield" autocomplete="off" disabled />
-            
-                
-                </div>
-  
+                <input style="float:right;height:46px;margin-right:8px;" id="roomfield" autocomplete="off" disabled />
+
+
+            </div>
+
         </div>
 
     </div>
@@ -126,7 +127,7 @@
         var input = document.getElementById('input');
         var roomField = document.getElementById('roomfield');
         var secretField = document.getElementById('secretfield');
-        
+
         var roomName = document.getElementById('roomName');
 
         create.addEventListener('click', function (e) {
@@ -142,7 +143,6 @@
         socket.on('room created', function (msg) {
             room = msg;
             roomField.value = room.room;
-            secretField.value = room.secret;
             console.log(room)
             start.disabled = false;
         });

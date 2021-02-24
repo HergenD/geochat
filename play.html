@@ -78,17 +78,20 @@
             margin: 4px 12px 0 0;
             display: inline-block;
         }
+
         .connected {
             background-color: #83F52C;
         }
+
         .disconnected {
             background-color: red;
         }
-        .red{
-           color: #ff8280;
-           float:right;
-           margin:12px 0 20px 5px;
-           font-weight:600;
+
+        .red {
+            color: #ff8280;
+            float: right;
+            margin: 12px 0 20px 5px;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -97,13 +100,20 @@
     <div class="controls">
         <h3 id="roomName" style="float:left">Joining room...</h2>
 
-                <div class="button" id="startGame" style="float:right;margin-left:20px;display:none;">Start game</div>
-                <h3 id="gameInfo" style="float:right">Game not started</h2>
+            <div class="button" id="startGame" style="float:right;margin-left:20px;display:none;">Start game</div>
+            <h3 id="gameInfo" style="float:right">Game not started</h2>
     </div>
     <div id="map"></div>
     <div class="controls">
         <button style="float:left" class="button" id="submitGuess" disabled>Submit geoguess</button>
-        <svg width="20px" class="red" fill="#ff8280" height="20px" version="1.1" viewBox="0 0 20 20" x="0px" y="0px" class="ScSvg-sc-1j5mt50-1 fOHdCK"><g><path fill-rule="evenodd" d="M5 7a5 5 0 116.192 4.857A2 2 0 0013 13h1a3 3 0 013 3v2h-2v-2a1 1 0 00-1-1h-1a3.99 3.99 0 01-3-1.354A3.99 3.99 0 017 15H6a1 1 0 00-1 1v2H3v-2a3 3 0 013-3h1a2 2 0 001.808-1.143A5.002 5.002 0 015 7zm5 3a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd"></path></g></svg>
+        <svg width="20px" class="red" fill="#ff8280" height="20px" version="1.1" viewBox="0 0 20 20" x="0px" y="0px"
+            class="ScSvg-sc-1j5mt50-1 fOHdCK">
+            <g>
+                <path fill-rule="evenodd"
+                    d="M5 7a5 5 0 116.192 4.857A2 2 0 0013 13h1a3 3 0 013 3v2h-2v-2a1 1 0 00-1-1h-1a3.99 3.99 0 01-3-1.354A3.99 3.99 0 017 15H6a1 1 0 00-1 1v2H3v-2a3 3 0 013-3h1a2 2 0 001.808-1.143A5.002 5.002 0 015 7zm5 3a3 3 0 110-6 3 3 0 010 6z"
+                    clip-rule="evenodd"></path>
+            </g>
+        </svg>
         <p id="playerCount" class="red">0</p>
     </div>
 
@@ -142,6 +152,8 @@
         let theMarker = {};
         let lat;
         let lon;
+        let round;
+        let seconds;
 
         var mapDiv = document.getElementById('map');
         var submitGuess = document.getElementById('submitGuess');
@@ -175,6 +187,7 @@
 
         var socket = io();
         socket.emit('user connect', cookie.userId ?? "create");
+
         socket.on('user connected', function (userId) {
             document.cookie = `userId = ${userId}`;
         });
@@ -190,6 +203,7 @@
 
         const path = window.location.pathname;
         const joinRoom = path.noSlash();
+
         if (joinRoom) {
             socket.emit('join room', joinRoom);
         }
@@ -212,6 +226,7 @@
             mapDiv.style.border = "20px solid black";
         });
 
+        // All listners
         socket.on('countdown', function (msg) {
             updateGameInfo(null, msg);
         });
@@ -227,11 +242,11 @@
                 start.style.display = "inline-block";
                 gameInfo.style.display = "inline-block";
             }
-            rounds=msg.rounds;
-            if(msg.status){
+            rounds = msg.rounds;
+            if (msg.status) {
                 updateGameInfo(msg.currentRound, msg.currentSeconds);
             }
-            if(msg.canGuess){
+            if (msg.canGuess) {
                 allowGuess = true;
             }
 
@@ -254,15 +269,6 @@
             allowGuess = true;
             mapDiv.style.border = "20px solid #83F52C";
         });
-
-        let round;
-        let seconds;
-        function updateGameInfo(r, s){
-            round = r??round;
-            seconds = s??seconds;
-            let string = `Remaining: ${seconds} - Round ${round}/${rounds}`
-            gameInfo.innerHTML = string;
-        }
 
         socket.on('finished', function (msg) {
             console.log(msg);
@@ -295,6 +301,15 @@
                 map.removeLayer(theMarker);
             };
         });
+
+
+        function updateGameInfo(r, s) {
+            round = r ?? round;
+            seconds = s ?? seconds;
+            let string = `Remaining: ${seconds} - Round ${round}/${rounds}`
+            gameInfo.innerHTML = string;
+        }
+
     </script>
 </body>
 
