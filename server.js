@@ -1,32 +1,15 @@
-// Requires
-const app = require('express')();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
-var async = require('async');
+// Requires & globals
+const { HttpRouter } = require('./modules/HttpRouter');
+const router = new HttpRouter();
+const io = require('socket.io')(router.http);
+const async = require('async');
+const users = {};
+const rooms = {};
 
-// Globals
-const port = process.env.PORT || 3000;
-let users = {};
-let rooms = {};
+// Run webserver
+router.serve(3000);
 
-// Web server
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/create.html');
-});
-app.get('/style', (req, res) => {
-    res.sendFile(__dirname + '/css/style.css');
-});
-app.get('/js/create', (req, res) => {
-    res.sendFile(__dirname + '/js/create.js');
-});
-app.get('/js/play', (req, res) => {
-    res.sendFile(__dirname + '/js/play.js');
-});
-app.get('/*', (req, res) => {
-    res.sendFile(__dirname + '/play.html');
-});
-
-// Websocket connection router
+// WS router
 io.on('connection', (socket) => {
     let connection = createGlobalConnection(socket);
 
@@ -36,11 +19,6 @@ io.on('connection', (socket) => {
     socket.on('join room', roomId => joinRoom(connection, roomId));
     socket.on('submit guess', guess => processGuess(connection, guess));
     socket.on("disconnect", () => disconnectUser(connection));
-});
-
-
-http.listen(port, () => {
-    console.log(`Socket.IO server running at http://localhost:${port}/`);
 });
 
 function makeid(length) {
