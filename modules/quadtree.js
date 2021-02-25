@@ -120,3 +120,7 @@ class QTree
         return rect;
     }
 }
+
+module.exports.Rectangle = Rectangle;
+module.exports.Point = Point;
+module.exports.QTree = QTree;

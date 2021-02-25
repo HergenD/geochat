@@ -18,10 +18,17 @@ class HttpRouter {
     }
 
     serve(port) {
-        // Web server
         this.http.listen(port, () => {
             console.log(`Socket.IO server running at http://localhost:${port}/`);
         });
+    }
+
+    getHttp() {
+        return this.http;
+    }
+
+    getApp() {
+        return this.app;
     }
 }
 

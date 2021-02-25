@@ -23,17 +23,23 @@ map.dragging.disable();
 let theMarker = {};
 let lat;
 let lon;
+let clickX;
+let clickY;
 let round;
 let seconds;
+let currentZoom = 1;
 
 var mapDiv = document.getElementById('map');
 var submitGuess = document.getElementById('submitGuess');
 var allowGuess = false;
 
 map.on('click', function (e) {
+    console.log(e);
     if (allowGuess) {
         lat = e.latlng.lat;
         lon = e.latlng.lng;
+        clickX = e.containerPoint.x;
+        clickY = e.containerPoint.y;
         submitGuess.disabled = false;
         //Clear existing marker, 
 
@@ -80,7 +86,6 @@ if (joinRoom) {
 }
 
 start.addEventListener('click', function (e) {
-    console.log(room);
     e.preventDefault();
     if (room) {
         socket.emit('start game', room);
@@ -90,7 +95,7 @@ start.addEventListener('click', function (e) {
 submitGuess.addEventListener('click', function (e) {
     e.preventDefault();
     if (room) {
-        socket.emit('submit guess', { room: room, lat, lon });
+        socket.emit('submit guess', { room: room, lat, lon, clickX, clickY });
     }
     allowGuess = false;
     submitGuess.disabled = true;
@@ -104,11 +109,9 @@ socket.on('countdown', function (msg) {
 
 socket.on('stats', function (msg) {
     document.getElementById("playerCount").innerHTML = msg.players;
-    console.log(msg);
 });
 
 socket.on('room joined', function (msg) {
-    console.log(msg)
     if (msg.admin && msg.status == 0) {
         start.style.display = "inline-block";
         gameInfo.style.display = "inline-block";
@@ -131,19 +134,24 @@ socket.on('redirect', function (msg) {
 });
 
 socket.on('round', function (msg) {
+    console.log(msg);
+    const centerX = msg.point.x + (msg.point.w/2);
+    const centerY = msg.point.y + (msg.point.h/2)
+    const point = new L.Point(centerX, centerY);
+    const latLon = map.layerPointToLatLng(point);
     updateGameInfo(msg.round, null);
 
-    map.flyTo([msg.lat, msg.lon], msg.zoom)
+    map.flyTo(latLon, msg.zoom)
 
     if (theMarker != undefined) {
         map.removeLayer(theMarker);
     };
     allowGuess = true;
     mapDiv.style.border = "20px solid #83F52C";
+    currentZoom = msg.zoom;
 });
 
 socket.on('finished', function (msg) {
-    console.log(msg);
     if (theMarker != undefined) {
         map.removeLayer(theMarker);
     };

@@ -1,7 +1,12 @@
 // Requires & globals
 const { HttpRouter } = require('./modules/HttpRouter');
+const { QTree } = require('./modules/quadtree');
+const { Point } = require('./modules/quadtree');
+const { Rectangle } = require('./modules/quadtree');
+
 const router = new HttpRouter();
-const io = require('socket.io')(router.http);
+
+const io = require('socket.io')(router.getHttp());
 const async = require('async');
 const users = {};
 const rooms = {};
@@ -43,6 +48,8 @@ function submitGuess(room, user, guess) {
     const currentRound = room.currentRound;
     room.guesses[currentRound].push({ lat: guess.lat, lon: guess.lon })
     room.players[user][currentRound] = true;
+    const point = new Point(guess.clickX, guess.clickY);
+    room.qt.insert(point);
 }
 
 function runRoomInfoLoop(roomId) {
@@ -66,11 +73,17 @@ function initializeGameLoop(room) {
         round: room.currentRound,
         lat: 51.505,
         lon: -0.09,
+        point:{
+            x:0,
+            y:0,
+            w:600,
+            h:350,
+        },
         zoom: room.zooms[room.currentRound]
     });
 }
 
-function calculateAverageLatLon(room) {
+function simpleAverage(room){
     let totalLat = 0;
     let totalLon = 0;
     const round = room.currentRound;
@@ -84,6 +97,43 @@ function calculateAverageLatLon(room) {
         room.lat = totalLat / room.guesses[round].length;
         room.lon = totalLon / room.guesses[round].length;
     }
+}
+
+// {
+//     room: roomId, // roomId refactor
+//     gameRunning: false,
+//     admin: connection.userId,
+//     rounds,
+//     currentRound: 0,
+//     currentSeconds: duration,
+//     guesses: {},
+//     zooms: options.zooms,
+//     duration,
+//     players: {},
+//     lat: 51.505,
+//     lon: -0.09,
+//     playerCount: 0,
+//     roomName
+// }
+//
+// 2^numZooms
+// 2 -> 5
+// 3
+// 600/8 350/8
+function quadTreeAverage(room){
+    const quadTree = room.qt;
+    const zoomLevel = room.zooms[room.currentRound];
+    const newZoomLevel = room.zooms[room.currentRound+1]
+    const zoomDelta = newZoomLevel - zoomLevel;
+    const devideBy = Math.pow(2, zoomDelta);
+    room.point = room.qt.getHighestPopulationRect(600/devideBy, 350/devideBy, 10);
+    room.qt = new QTree(new Rectangle(0, 0, 600, 350), 1);
+    console.log(room.point);
+}
+
+function calculateAverageLatLon(room) {
+    // simpleAverage(room);
+    quadTreeAverage(room);
 }
 
 function resetRoom(room) {
@@ -102,7 +152,7 @@ function checkIfLastRound(room) {
         return false;
     }
     
-    calculateAverageLatLon(room);
+    simpleAverage(room);
 
     io.to(room.room).emit("finished", {
         round: room.currentRound,
@@ -126,6 +176,7 @@ function roundEnd(room) {
         round: room.currentRound,
         lat: room.lat,
         lon: room.lon,
+        point: room.point,
         zoom: room.zooms[room.currentRound]
     });
     return true;
@@ -282,12 +333,14 @@ function addPlayerToRoom(room, connection) {
 }
 
 function processGuess(connection, guess) {
+    console.log(guess);
     const room = rooms[guess.room];
-
+    if(room.qt == undefined){
+        room.qt = new QTree(new Rectangle(0, 0, 600, 350), 1);
+    }
     if (!checkIfGuessAllowed(room, connection.userId)) {
         return;
     }
-
     submitGuess(room, connection.userId, guess);
 }
 
