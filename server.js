@@ -13,6 +13,15 @@ let rooms = {};
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/create.html');
 });
+app.get('/style', (req, res) => {
+    res.sendFile(__dirname + '/css/style.css');
+});
+app.get('/js/create', (req, res) => {
+    res.sendFile(__dirname + '/js/create.js');
+});
+app.get('/js/play', (req, res) => {
+    res.sendFile(__dirname + '/js/play.js');
+});
 app.get('/*', (req, res) => {
     res.sendFile(__dirname + '/play.html');
 });
@@ -73,16 +82,14 @@ function runRoomInfoLoop(roomId) {
 }
 
 function initializeGameLoop(room) {
-    let round = 1;
-    let duration = room.duration;
-
+    room.currentRound = 1;
+    room.gameRunning = true;
     io.to(room.room).emit("round", {
-        round,
+        round: room.currentRound,
         lat: 51.505,
         lon: -0.09,
-        zoom: room.zooms[round]
+        zoom: room.zooms[room.currentRound]
     });
-    return [round, duration];
 }
 
 function calculateAverageLatLon(room) {
@@ -101,7 +108,7 @@ function calculateAverageLatLon(room) {
     }
 }
 
-function resetRoom(room){
+function resetRoom(room) {
     room.gameRunning = false;
     for (let i = 0; i < Object.keys(room.players).length; i++) {
         room.players[Object.keys(room.players)[i]] = {};
@@ -112,9 +119,47 @@ function resetRoom(room){
     room.currentSeconds = room.duration;
 }
 
+function checkIfLastRound(room) {
+    if (room.currentRound < room.rounds) {
+        return false;
+    }
+    
+    calculateAverageLatLon(room);
+
+    io.to(room.room).emit("finished", {
+        round: room.currentRound,
+        lat: room.lat,
+        lon: room.lon,
+        zoom: room.zooms[room.currentRound]
+    });
+
+    resetRoom(room);
+
+    return true;
+}
+
+function roundEnd(room) {
+    room.currentSeconds = room.duration + 1
+    calculateAverageLatLon(room);
+
+    room.currentRound++;
+
+    io.to(room.room).emit("round", {
+        round: room.currentRound,
+        lat: room.lat,
+        lon: room.lon,
+        zoom: room.zooms[room.currentRound]
+    });
+    return true;
+}
+
+function roundStart(room) {
+    room.guesses[room.currentRound] = [];
+}
+
 function startGameLoop(roomId) {
     const room = rooms[roomId];
-    let [round, duration] = initializeGameLoop(room)
+    initializeGameLoop(room)
 
     async.whilst(
         function (cb) {
@@ -128,40 +173,16 @@ function startGameLoop(roomId) {
 
             switch (room.currentSeconds) {
                 case 0:
-                    if (round >= room.rounds) {
-                        calculateAverageLatLon(room);
-
-                        io.to(roomId).emit("finished", {
-                            round,
-                            lat: room.lat,
-                            lon: room.lon,
-                            zoom: room.zooms[round]
-                        });
-
-                        resetRoom(room);
-
+                    if (checkIfLastRound(room)) {
                         return;
-                    } 
-
-                    room.currentSeconds = duration + 1
-                    calculateAverageLatLon(room);
-
-                    round++;
-
-                    io.to(roomId).emit("round", {
-                        round,
-                        lat: room.lat,
-                        lon: room.lon,
-                        zoom: room.zooms[round]
-                    });
-
+                    }
+                    roundEnd(room);
                     break;
                 case 1:
-                    waitTime = waitTime + 1000;
+                    waitTime += 1000;
                     break;
-                case duration:
-                    room.currentRound = round;
-                    room.guesses[round] = [];
+                case room.duration:
+                    roundStart(room);
                     break;
             }
 
@@ -231,8 +252,6 @@ function startGame(connection, roomId) {
     if (connection.userId !== room.admin || room.gameRunning) {
         return;
     }
-
-    room.gameRunning = true;
     connection.socket.emit("game started", true);
     startGameLoop(roomId);
 }

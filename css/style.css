@@ -1,0 +1,134 @@
+body,
+html {
+    margin: 0;
+    padding: 0;
+    background-color: #6441a5;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container {
+    height: 350px;
+    width: 600px;
+    padding: 30px;
+    font-size: 24px;
+    font-weight: 600;
+    margin: calc(50vh - 175px) auto 0 auto;
+    background-color: black;
+}
+
+.container input {
+    height: 28px;
+    font-size: 22px;
+    font-weight: 500;
+}
+
+.input {
+    margin-top: 22px;
+}
+
+.button {
+    background-color: white;
+    border: none;
+    color: black;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    float: right;
+    margin-bottom: 18px;
+}
+
+.button:hover {
+    cursor: pointer;
+}
+
+.button:disabled {
+    color: grey;
+    cursor: not-allowed;
+}
+
+.button-black {
+    background-color: black;
+    border: none;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.button-black:hover {
+    cursor: pointer;
+}
+
+.button-black:disabled {
+    color: grey;
+    cursor: not-allowed;
+}
+
+.hover {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 999;
+}
+
+.startgame {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    z-index: 999;
+}
+
+#map {
+    width: 600px;
+    height: 350px;
+    margin: 0 auto;
+    border: 20px solid black;
+}
+
+.controls {
+    width: 640px;
+    margin: 20px auto;
+    clear: both;
+}
+
+h3 {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: white;
+}
+
+.coords p {
+    font-size: 12px;
+}
+
+.dot {
+    height: 16px;
+    width: 16px;
+    background-color: #bbb;
+    border-radius: 50%;
+    margin: 4px 12px 0 0;
+    display: inline-block;
+}
+
+.connected {
+    background-color: #83F52C;
+}
+
+.disconnected {
+    background-color: red;
+}
+
+.red {
+    color: #ff8280;
+    float: right;
+    margin: 12px 0 20px 5px;
+    font-weight: 600;
+}
